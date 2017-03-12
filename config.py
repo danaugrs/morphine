@@ -2,15 +2,15 @@
 from math import log2, floor
 
 
-SECURITY_PARAMETER = 5
+SECURITY_PARAMETER = 4
 
 N = SECURITY_PARAMETER
 P = SECURITY_PARAMETER**2
-Q = SECURITY_PARAMETER**4
+Q = SECURITY_PARAMETER**5
 
-HINT_SIZE = 4 # BETA
+
 HINT_SUBSET_SIZE = floor(SECURITY_PARAMETER/log2(SECURITY_PARAMETER)) # ALPHA
-assert HINT_SUBSET_SIZE == 2
+HINT_SIZE = 2 * HINT_SUBSET_SIZE
 
 PK_SIZE = 15 # This is the number of encryptions of zero in the public key
 
@@ -27,3 +27,5 @@ PK_SUBSET_SIZE = 4 #5 works almost with 2 mults
 
 if __name__ == '__main__':
 	print('N, P, Q:', N, P, Q)
+	print('HINT_SUBSET_SIZE:', HINT_SUBSET_SIZE)
+	print('HINT_SIZE:', HINT_SIZE)
