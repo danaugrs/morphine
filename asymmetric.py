@@ -25,9 +25,7 @@ def encrypt(pk, b):
     idxs = np.random.choice(np.arange(PK_SIZE), PK_SUBSET_SIZE, replace=False)
     
     # Sum subset of encrypted zeros along with the bit to be encrypted
-    cypher = b #cypher = (random.randint(0, 2**(N-1) -1) << 1) + b
-    for i in idxs:
-        cypher += pk[i]
+    cypher = b + sum([pk[i] for i in idxs])
         
     return cypher
 
