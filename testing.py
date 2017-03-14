@@ -24,7 +24,7 @@ def consistency(func, args, expected, n=10**4):
 
 
 def max_over(n, func, args=None):
-    """Compute the maximum value returned func(args) in n runs."""
+    """Compute the maximum value returned by func(args) in n runs."""
     m = 0
     for i in range(n):
         v = func(*args) if args else func()
