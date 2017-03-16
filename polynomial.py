@@ -14,7 +14,7 @@ class Polynomial:
         return self.elements()[key]
 
     def __str__(self):
-        return type(self).__name__+str(self.elements())#sorted(self.values))
+        return type(self).__name__ + str(self.elements())#sorted(self.values))
 
     def __repr__(self):
         return self.__str__()
@@ -92,7 +92,7 @@ def normalize(poly: Polynomial):
     else:
         return poly
 
-
+#TODO use poly OR polynomial
 def flatten(polynomial: Polynomial, parent=None):
     """Flatten a polynomial to the minimal depth."""
     normalized = normalize(polynomial)
