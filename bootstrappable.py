@@ -12,7 +12,7 @@ getcontext().prec = Q
 
 def generate_ssp_set(size, subset_size, sumto):
     """
-    Generate random set such that a subset sums to a given value.
+    Generate random set of Decimals such that a subset sums to a given value.
     https://en.wikipedia.org/wiki/Subset_sum_problem
     """
 
@@ -41,8 +41,9 @@ def keygen():
     The main idea here is that we want to minimize computation during decryption because it originally contains
     an expensive modulus operation (c % p) that is too much for our somewhat homomorphic encryption system to handle
     in a single recrypt. We would like to substitute that expensive operation by a small summation. To do that we
-    include a set with the public key that contains a hidden subset that sums to 1/p. The secret key then becomes
-    the binary vector encoding that subset.
+    include a set with the public key that contains a hidden subset that sums to 1/p. We call that the SSP set.
+    The secret key then becomes the binary vector encoding that subset. The SSP set is provided as part of the public
+    key, along with the set of encryptions of zero.
     """
 
     # Generate a regular key pair
@@ -61,11 +62,20 @@ def encrypt(pk_z, pk_y, b):
     # Perform regular asymmetric encryption
     c = asymmetric.encrypt(pk_z, b)
 
-    # Post-process the cyphertext with pk_y to simplify computation during decryption
-    # This is one of the key steps in making our homomorphic encryption scheme bootstrappable
-    cy = [Decimal(c) * Decimal(y) for y in pk_y]
+    # Post process the cypher text to generate the appropriate 1/p SPP set
+    cy = post_process(c, pk_y)
 
     return (c, cy)
+
+
+def post_process(c, pk_y):
+    """
+    Post-process the cyphertext with pk_y to simplify computation during decryption.
+    
+    We compute and return the 1/p SSP set for the provided cyphertext before decryption takes place.
+    This is one of the key steps in making our homomorphic encryption scheme bootstrappable.
+    """
+    return [Decimal(c) * Decimal(y) for y in pk_y]
 
 
 def decrypt(sk, c, cy):
@@ -92,11 +102,39 @@ if __name__ == '__main__':
 
     from testing import consistency
 
+    T = 10**5
+
     def keygenEncryptDecrypt(b):
         """bootstrappable keygen-encrypt-decrypt (bit = {0})"""
         sk, pk_z, pk_y = keygen()
         c, cy = encrypt(pk_z, pk_y, b)
         return decrypt(sk, c, cy)
 
-    consistency(keygenEncryptDecrypt, (0,), 0, 10**5)
-    consistency(keygenEncryptDecrypt, (1,), 1, 10**5)
+    consistency(keygenEncryptDecrypt, (0,), 0, T)
+    consistency(keygenEncryptDecrypt, (1,), 1, T)
+
+    def keygenEncryptSum(b1, b2):
+        """bootstrappable keygen-encrypt-sum ({0}+{1})"""
+        sk, pk_z, pk_y = keygen()
+        c1, cy1 = encrypt(pk_z, pk_y, b1)
+        c2, cy2 = encrypt(pk_z, pk_y, b2)
+        s = c1 + c2
+        sy = post_process(s, pk_y)
+        return decrypt(sk, s, sy)
+
+    consistency(keygenEncryptSum, (0,0), 0, T)
+    consistency(keygenEncryptSum, (0,1), 1, T)
+    consistency(keygenEncryptSum, (1,1), 0, T)
+
+    def keygenEncryptMult(b1, b2):
+        """bootstrappable keygen-encrypt-mult ({0}*{1})"""
+        sk, pk_z, pk_y = keygen()
+        c1, cy1 = encrypt(pk_z, pk_y, b1)
+        c2, cy2 = encrypt(pk_z, pk_y, b2)
+        m = c1 * c2
+        my = post_process(m, pk_y)
+        return decrypt(sk, m, my)
+
+    consistency(keygenEncryptMult, (0,0), 0, T)
+    consistency(keygenEncryptMult, (0,1), 0, T)
+    consistency(keygenEncryptMult, (1,1), 1, T)
