@@ -39,7 +39,7 @@ class Polynomial:
         return hash(flatten(self)) == hash(flatten(other))
 
     def __ne__(self, other):
-        return hash(self) != hash(other)
+        return hash(flatten(self)) != hash(flatten(other))
 
     def elements(self):
         return sorted(self.values.elements())
@@ -54,18 +54,18 @@ class Prod(Polynomial):
     pass
 
 
-def evaluate(values: list, polynomial: Polynomial):
+def evaluate(values: list, poly: Polynomial):
     """Evaluate a polynomial using the provided values."""
-    pt = type(polynomial)  
+    pt = type(poly)  
     if pt == Sum:
-        return sum(evaluate(values, i) for i in polynomial)
+        return sum(evaluate(values, i) for i in poly)
     elif pt == Prod:
         res = 1
-        for item in polynomial:
+        for item in poly:
             res *= evaluate(values, item)
         return res
     else:
-        return values[polynomial]
+        return values[poly]
 
 
 def elementary_symmetric(size: int, degree: int):
@@ -77,35 +77,54 @@ def elementary_symmetric(size: int, degree: int):
 
 def normalize(poly: Polynomial):
     """Unroll equivalent nested operations."""
+    new = _normalize(poly)
+    while hash(poly) != hash(new):
+        poly = new
+        new = _normalize(poly)
+    return poly
+
+
+def _normalize(poly: Polynomial):
+    """Unroll equivalent nested operations once."""
     pt = type(poly)
     if issubclass(pt, Polynomial):
         if len(poly.elements()) == 1:
-            return normalize(poly[0])
+            return _normalize(poly[0])
         new_elements = []
         for p in poly:
             if type(p) == pt:
-                v = normalize(p)
-                new_elements.extend(v)
+                new_elements.extend(_normalize(p))
             else:
-                new_elements.append(normalize(p))
+                new_elements.append(_normalize(p))
         return pt(*new_elements)
     else:
         return poly
 
-#TODO use poly OR polynomial
-def flatten(polynomial: Polynomial, parent=None):
-    """Flatten a polynomial to the minimal depth."""
-    normalized = normalize(polynomial)
-    def _flatten(polynomial: Polynomial):
-        # TODO; recursive
-        # print('flattening', polynomial)
 
-        # is_sum = type(polynomial) == Sum
-        # is_prod = type(polynomial) == Prod
+def flatten(poly: Polynomial):
+    """Flatten and normalize a polynomial to the minimal depth."""
+    return normalize(_flatten(poly))
 
-        return polynomial
 
-    return _flatten(normalized)
+def _flatten(poly: Polynomial):
+    """Flatten a polynomial to the minimal depth (unnormalized)."""
+    pt = type(poly)
+    if issubclass(pt, Polynomial):
+        if pt == Prod:
+            prod_elements = []
+            for sumOrInt in poly:
+                if type(sumOrInt) == Sum:
+                    prod_elements.append([_flatten(s) for s in sumOrInt.elements()])
+                else:
+                    prod_elements.append([sumOrInt])
+            elements = list(product(*prod_elements))
+            if len(elements) == 1:
+                return Prod(*elements[0])
+            return Sum(*[Prod(*i) for i in elements])
+        elif pt == Sum:
+            return Sum(*[_flatten(i) for i in poly.elements()])
+    else:
+        return poly
 
 
 if __name__ == '__main__':
@@ -145,22 +164,24 @@ if __name__ == '__main__':
     assert normalize(Prod(Prod(0, 1), Prod(0, 1))) == Prod(0, 0, 1, 1)
     assert normalize(Prod(Sum(3), Prod(Sum(1, 2), 5, 0, 4))) == Prod(0, 3, 4, 5, Sum(1, 2))
     assert normalize(Prod(Sum(0, Prod(1, 2)), Sum(0, 1))) == Prod(Sum(0, Prod(1, 2)), Sum(0, 1))
+    assert normalize(Prod(Sum(1, 2))) == Sum(1, 2)
+
+    # Test that normalizing normalizing once is equal to normalizing any number of times
+    assert hash(normalize(Sum(Prod(0, Sum(Prod(1, 2))), Prod(1, Sum(Prod(1, 2)))))) == hash(normalize(normalize(Sum(Prod(0, Sum(Prod(1, 2))), Prod(1, Sum(Prod(1, 2)))))))
     
     assert Sum(Prod(1)) == Sum(1)
     assert Sum(Prod(Sum(1))) == Prod(1)
 
+    assert Prod(0, Prod(1, 2)) == Prod(0, 1, 2)
+    assert normalize(Prod(0, Prod(1, 2))) == Prod(0, 1, 2)
+
     nested = Prod(Sum(0, Prod(1, 2)), Sum(0, 1))
+    assert flatten(nested) == Sum(Prod(0, 0), Prod(0, 1), Prod(0, 1, 2), Prod(1, 1, 2))
+    assert normalize(normalize(nested)) == nested
+    assert flatten(flatten(nested)) == nested
 
-    assert normalize(nested) == nested
-
-    #TODO implement flatten()
-    print(flatten(nested))
-    # assert flatten(nested) == Sum(Prod(0, 0), Prod(0, 1), Prod(0, 1, 2), Prod(1, 1, 2))
-    
-    # print(flatten(flatten(flatten(Prod(Sum(0, Prod(1, 2)), Sum(0, 1))))))
-    # print(flatten(flatten(flatten(flatten(Prod(Sum(0, Prod(1, 2)), Sum(0, 1)))))))
-    # assert flatten(Prod(0, Sum(0,1))) == Sum(Prod(0, 0), Prod(0, 1))
-    # assert flatten(Sum(Sum(0, Sum(1, 2)), Sum(0, 1))) == Sum(0, 0, 1, 1, 2)
-    # assert flatten(Prod(Sum(0, Prod(1, 2)), Sum(0, 1))) == Sum(Prod(0, 0), Prod(0, 1), Prod(0, 1, 2), Prod(1, 1, 2))
-    # assert flatten(Prod(2, Sum(0, 1))) == Sum(Prod(0, 2), Prod(1, 2))
+    assert flatten(Prod(0, Sum(0,1))) == Sum(Prod(0, 0), Prod(0, 1))
+    assert flatten(Sum(Sum(0, Sum(1, 2)), Sum(0, 1))) == Sum(0, 0, 1, 1, 2)
+    assert flatten(Prod(Sum(0, Prod(1, 2)), Sum(0, 1))) == Sum(Prod(0, 0), Prod(0, 1), Prod(0, 1, 2), Prod(1, 1, 2))
+    assert flatten(Prod(2, Sum(0, 1))) == Sum(Prod(0, 2), Prod(1, 2))
  
