@@ -166,7 +166,7 @@ if __name__ == '__main__':
     assert normalize(Prod(Sum(0, Prod(1, 2)), Sum(0, 1))) == Prod(Sum(0, Prod(1, 2)), Sum(0, 1))
     assert normalize(Prod(Sum(1, 2))) == Sum(1, 2)
 
-    # Test that normalizing normalizing once is equal to normalizing any number of times
+    # Test that normalizing once is equal to normalizing any number of times
     assert hash(normalize(Sum(Prod(0, Sum(Prod(1, 2))), Prod(1, Sum(Prod(1, 2)))))) == hash(normalize(normalize(Sum(Prod(0, Sum(Prod(1, 2))), Prod(1, Sum(Prod(1, 2)))))))
     
     assert Sum(Prod(1)) == Sum(1)
