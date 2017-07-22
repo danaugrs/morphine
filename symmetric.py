@@ -64,7 +64,7 @@ if __name__ == '__main__':
     consistency(keygenEncryptSum, (1,1), 0, T)
 
     def keygenEncryptMult(b1, b2):
-        """symmetric keygen-encrypt-mult ({0}+{1})"""
+        """symmetric keygen-encrypt-mult ({0}*{1})"""
         key = keygen()
         c1 = encrypt(key, b1)
         c2 = encrypt(key, b2)
