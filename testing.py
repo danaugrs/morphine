@@ -7,8 +7,8 @@ def consistency(func, args, expected, n=10**4):
     """Analyze and report on the consistency of a function."""
     print('\n[CONSISTENCY TEST] {0}'.format(func.__doc__.format(*args)))
 
-    def show(num, den, t, p):
-        print('{3}|{4:.3f}: {0}/{1} = {2}'.format(num, den, num/den, str(timedelta(seconds=t)), p), end='\r')
+    def show(num, den, t, p, end='\r'):
+        print('{3}|{4:.3f}: {0}/{1} = {2}'.format(num, den, num/den, str(timedelta(seconds=t)), p), end=end)
 
     start = time.time()
     interval = start
@@ -20,7 +20,7 @@ def consistency(func, args, expected, n=10**4):
         if diff > 0.01:
             interval = time.time()
             show(tally, (i+1), time.time() - start, (i+1)/n)
-    show(tally, n, time.time() - start, (i+1)/n)
+    show(tally, n, time.time() - start, (i+1)/n, '\n')
 
 
 def max_over(n, func, args=None):

@@ -6,11 +6,11 @@ from config import *
 import numpy as np
 
 
-def keygen():
+def keygen(kt=symmetric.KeyType.RANDOM):
     """Generate private and public keys."""
 
     # Generate regular secret key
-    sk = symmetric.keygen()
+    sk = symmetric.keygen(kt)
 
     # Generate a set of encryptions of zero
     pk = [symmetric.encrypt(sk, 0, PK_M_BIT_LENGTH) for i in range(PK_SIZE)]
